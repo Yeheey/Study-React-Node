@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { students } from '../data/store.js'
+import { getStudentById } from '../db/students.js'
 import { VALID_STATUS, isValidDate, isValidTime } from './helpers.js'
 
 export const IMPORT_REQUIRED_FIELDS = ['id', 'studentId', 'date', 'status']
@@ -164,7 +164,7 @@ export function validateImportRow(item) {
   const studentId = String(item.studentId ?? '').trim()
   if (!studentId) return { error: '缺少 studentId' }
 
-  const student = students.find((s) => s.id === studentId)
+  const student = getStudentById(studentId)
   if (!student) return { error: `学生不存在：${studentId}` }
 
   const date = toDateString(item.date)

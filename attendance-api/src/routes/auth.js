@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createToken, findUserByUsername, toPublicUser } from '../data/users.js'
+import { createToken, findUserByUsername, toPublicUser } from '../db/users.js'
 import { fail, ok } from '../utils/helpers.js'
 
 const router = Router()

@@ -58,6 +58,41 @@ export function fetchStudents(params: { keyword?: string; grade?: string } = {})
   return request<{ list: Student[]; total: number }>(`/api/students${qs ? `?${qs}` : ''}`)
 }
 
+export function createStudent(payload: {
+  name: string
+  studentNo: string
+  className: string
+  grade: string
+  phone?: string
+}) {
+  return request<Student>('/api/students', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateStudent(
+  id: string,
+  payload: {
+    name?: string
+    studentNo?: string
+    className?: string
+    grade?: string
+    phone?: string
+  },
+) {
+  return request<Student>(`/api/students/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteStudent(id: string) {
+  return request<Student>(`/api/students/${id}`, {
+    method: 'DELETE',
+  })
+}
+
 export function fetchTodayAttendance(params: {
   keyword?: string
   className?: string

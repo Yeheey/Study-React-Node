@@ -1,7 +1,19 @@
 import { Router } from 'express'
 import multer from 'multer'
 import { requireAdmin, requireAuth } from '../middleware/auth.js'
-import { attendanceRecords, students, TODAY } from '../data/store.js'
+import {
+  createRecord,
+  deleteRecord,
+  findDuplicateRecord,
+  getDashboardStats,
+  getRecordById,
+  getToday,
+  listAttendance,
+  listDates,
+  updateRecord,
+  upsertRecord,
+} from '../db/attendance.js'
+import { getStudentById, listClasses, listGrades } from '../db/students.js'
 import {
   parseImportWorkbook,
   validateImportRow,
@@ -9,10 +21,6 @@ import {
 import {
   VALID_STATUS,
   fail,
-  filterAttendance,
-  findDuplicateRecord,
-  getDashboardStats,
-  getTodayRecords,
   isValidDate,
   isValidTime,
   ok,
@@ -33,28 +41,35 @@ function normalizeTime(value) {
   return time
 }
 
+function handleDbError(res, err) {
+  if (err.status) return fail(res, err.message, 1, err.status)
+  throw err
+}
+
 router.get('/dashboard/stats', (_req, res) => {
   return ok(res, getDashboardStats())
 })
 
 router.get('/attendance/today', (req, res) => {
   const { keyword = '', className = '', status = '' } = req.query
-  const list = filterAttendance(getTodayRecords(), { keyword, className, status })
-  return ok(res, { list, total: list.length, date: TODAY })
+  const today = getToday()
+  const list = listAttendance({ keyword, className, status, date: today })
+  return ok(res, { list, total: list.length, date: today })
 })
 
 router.get('/attendance/records', (req, res) => {
   const { keyword = '', className = '', status = '', date = '' } = req.query
-  const list = filterAttendance(attendanceRecords, { keyword, className, status, date })
+  const list = listAttendance({ keyword, className, status, date })
   return ok(res, { list, total: list.length })
 })
 
 router.get('/meta/options', (_req, res) => {
-  const classes = [...new Set(students.map((s) => s.className))]
-  const grades = [...new Set(students.map((s) => s.grade))]
-  const dates = [...new Set(attendanceRecords.map((r) => r.date))].sort().reverse()
-
-  return ok(res, { classes, grades, dates, today: TODAY })
+  return ok(res, {
+    classes: listClasses(),
+    grades: listGrades(),
+    dates: listDates(),
+    today: getToday(),
+  })
 })
 
 router.post(
@@ -93,15 +108,20 @@ router.post(
         continue
       }
 
-      const index = attendanceRecords.findIndex((row) => row.id === record.id)
-      if (index >= 0) {
-        attendanceRecords[index] = record
+      try {
+        const result = upsertRecord(record)
+        if (result.created) {
+          created += 1
+          continue
+        }
         updated += 1
-        continue
+      } catch (err) {
+        failed.push({
+          row: excelRow,
+          id: record.id,
+          message: err.message || '导入失败',
+        })
       }
-
-      attendanceRecords.unshift(record)
-      created += 1
     }
 
     return ok(res, { created, updated, failed }, '导入完成')
@@ -115,7 +135,7 @@ router.post('/attendance/records', requireAuth, requireAdmin, (req, res) => {
   if (!isValidDate(date)) return fail(res, '请选择有效日期')
   if (!VALID_STATUS.has(status)) return fail(res, '无效的考勤状态')
 
-  const student = students.find((item) => item.id === studentId)
+  const student = getStudentById(studentId)
   if (!student) return fail(res, '学生不存在', 404, 404)
 
   if (findDuplicateRecord(studentId, date)) {
@@ -125,64 +145,61 @@ router.post('/attendance/records', requireAuth, requireAdmin, (req, res) => {
   const time = normalizeTime(checkInTime)
   if (time === '__invalid__') return fail(res, '打卡时间格式应为 HH:mm')
 
-  const record = {
-    id: `r-${Date.now()}`,
-    studentId: student.id,
-    studentName: student.name,
-    studentNo: student.studentNo,
-    className: student.className,
-    date,
-    checkInTime: time ?? null,
-    status,
-    remark: remark ? String(remark).trim() : undefined,
+  try {
+    const record = createRecord({
+      studentId: student.id,
+      date,
+      checkInTime: time ?? null,
+      status,
+      remark,
+    })
+    return ok(res, record, '新增成功')
+  } catch (err) {
+    return handleDbError(res, err)
   }
-
-  attendanceRecords.unshift(record)
-  return ok(res, record, '新增成功')
 })
 
 router.patch('/attendance/:id', requireAuth, requireAdmin, (req, res) => {
-  const record = attendanceRecords.find((item) => item.id === req.params.id)
-  if (!record) return fail(res, '考勤记录不存在', 404, 404)
+  const current = getRecordById(req.params.id)
+  if (!current) return fail(res, '考勤记录不存在', 404, 404)
 
   const { status, checkInTime, remark, date } = req.body ?? {}
+  const patch = {}
 
   if (date !== undefined) {
     if (!isValidDate(date)) return fail(res, '请选择有效日期')
-    if (findDuplicateRecord(record.studentId, date, record.id)) {
+    if (findDuplicateRecord(current.studentId, date, current.id)) {
       return fail(res, '该学生当天已有考勤记录')
     }
-    record.date = date
+    patch.date = date
   }
 
   if (status !== undefined) {
     if (!VALID_STATUS.has(status)) return fail(res, '无效的考勤状态')
-    record.status = status
+    patch.status = status
   }
 
   if (checkInTime !== undefined) {
     const time = normalizeTime(checkInTime)
     if (time === '__invalid__') return fail(res, '打卡时间格式应为 HH:mm')
-    record.checkInTime = time
+    patch.checkInTime = time
   }
 
   if (remark !== undefined) {
-    const text = String(remark).trim()
-    if (text) {
-      record.remark = text
-    } else {
-      delete record.remark
-    }
+    patch.remark = remark
   }
 
-  return ok(res, record, '更新成功')
+  try {
+    const record = updateRecord(current.id, patch)
+    return ok(res, record, '更新成功')
+  } catch (err) {
+    return handleDbError(res, err)
+  }
 })
 
 router.delete('/attendance/:id', requireAuth, requireAdmin, (req, res) => {
-  const index = attendanceRecords.findIndex((item) => item.id === req.params.id)
-  if (index < 0) return fail(res, '考勤记录不存在', 404, 404)
-
-  const [removed] = attendanceRecords.splice(index, 1)
+  const removed = deleteRecord(req.params.id)
+  if (!removed) return fail(res, '考勤记录不存在', 404, 404)
   return ok(res, removed, '删除成功')
 })
 
@@ -191,35 +208,37 @@ router.post('/attendance/check-in', (req, res) => {
 
   if (!studentId) return fail(res, '缺少 studentId')
 
-  const student = students.find((item) => item.id === studentId)
+  const student = getStudentById(studentId)
   if (!student) return fail(res, '学生不存在', 404, 404)
 
   if (!VALID_STATUS.has(status)) return fail(res, '无效的考勤状态')
 
-  let record = attendanceRecords.find(
-    (item) => item.studentId === studentId && item.date === TODAY,
-  )
+  const today = getToday()
+  const existing = findDuplicateRecord(studentId, today)
+  const time = normalizeTime(checkInTime)
+  if (time === '__invalid__') return fail(res, '打卡时间格式应为 HH:mm')
 
-  if (!record) {
-    record = {
-      id: `r-${Date.now()}`,
-      studentId: student.id,
-      studentName: student.name,
-      studentNo: student.studentNo,
-      className: student.className,
-      date: TODAY,
-      checkInTime: checkInTime ?? null,
+  try {
+    if (!existing) {
+      const record = createRecord({
+        studentId: student.id,
+        date: today,
+        checkInTime: time ?? null,
+        status,
+        remark,
+      })
+      return ok(res, record, '打卡成功')
+    }
+
+    const record = updateRecord(existing.id, {
+      checkInTime: time === undefined ? existing.checkInTime : time,
       status,
       remark,
-    }
-    attendanceRecords.unshift(record)
+    })
     return ok(res, record, '打卡成功')
+  } catch (err) {
+    return handleDbError(res, err)
   }
-
-  record.checkInTime = checkInTime ?? record.checkInTime
-  record.status = status
-  if (remark !== undefined) record.remark = remark
-  return ok(res, record, '打卡成功')
 })
 
 export default router

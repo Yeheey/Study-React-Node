@@ -1,23 +1,23 @@
-export const users = [
-  {
-    username: 'admin',
-    password: '123456',
-    role: 'admin',
-    displayName: '管理员',
-  },
-  {
-    username: 'user1',
-    password: '123456',
-    role: 'user',
-    displayName: '普通用户',
-  },
-]
+import { getDb } from './index.js'
 
 export function findUserByUsername(username) {
-  return users.find((item) => item.username === username)
+  const name = String(username ?? '').trim()
+  if (!name) return null
+
+  const row = getDb()
+    .prepare(
+      `SELECT username, password, role, display_name AS displayName
+       FROM users
+       WHERE username = ?`,
+    )
+    .get(name)
+
+  return row ?? null
 }
 
 export function toPublicUser(user) {
+  if (!user) return null
+
   return {
     username: user.username,
     role: user.role,

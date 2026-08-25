@@ -11,6 +11,11 @@
 **/*.log
 **/npm-debug.log*
 
+# sqlite
+**/data/*.db
+**/data/*.db-wal
+**/data/*.db-shm
+
 # editor
 .DS_Store
 .idea/

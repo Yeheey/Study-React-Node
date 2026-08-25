@@ -1,5 +1,5 @@
 import { fail } from '../utils/helpers.js'
-import { parseToken } from '../data/users.js'
+import { parseToken } from '../db/users.js'
 
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization || ''
