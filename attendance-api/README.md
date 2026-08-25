@@ -26,7 +26,7 @@ npm run dev
 | GET | `/api/attendance/records?date=&status=` | 历史考勤 |
 | GET | `/api/meta/options` | 班级/年级/日期选项 |
 | POST | `/api/attendance/records` | 新增考勤记录（需管理员 token） |
-| POST | `/api/attendance/records/import` | 表格批量导入（需管理员 token，按 id 覆盖或新增） |
+| POST | `/api/attendance/records/import` | Excel 批量导入（.xlsx / .xls，需管理员 token，按 id 覆盖或新增） |
 | PATCH | `/api/attendance/:id` | 更新考勤记录（需管理员 token） |
 | DELETE | `/api/attendance/:id` | 删除考勤记录（需管理员 token） |
 

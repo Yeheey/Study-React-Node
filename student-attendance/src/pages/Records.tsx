@@ -259,7 +259,7 @@ export default function Records() {
             新增记录
           </Button>
           <Upload
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             showUploadList={false}
             beforeUpload={(file) => {
               void handleImport(file)

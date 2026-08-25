@@ -3,7 +3,7 @@ import { students } from '../data/store.js'
 import { VALID_STATUS, isValidDate, isValidTime } from './helpers.js'
 
 export const IMPORT_REQUIRED_FIELDS = ['id', 'studentId', 'date', 'status']
-export const IMPORT_ALLOWED_EXT = ['.xlsx', '.xls', '.csv']
+export const IMPORT_ALLOWED_EXT = ['.xlsx', '.xls']
 export const IMPORT_MAX_ROWS = 2000
 
 const HEADER_ALIASES = {
@@ -97,9 +97,9 @@ export function hasAllowedImportExt(filename) {
   return IMPORT_ALLOWED_EXT.some((ext) => name.endsWith(ext))
 }
 
-export function parseImportWorkbook(buffer, filename = '') {
-  if (!hasAllowedImportExt(filename)) {
-    return { error: '上传格式不正确，仅支持 .xlsx、.xls、.csv 表格文件' }
+export function parseImportWorkbook(buffer, filename = '', mimeType = '') {
+  if (!hasAllowedImportExt(filename) || /csv|text\/plain/i.test(mimeType)) {
+    return { error: '上传格式不正确，仅支持 .xlsx、.xls 表格文件' }
   }
 
   let workbook

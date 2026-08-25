@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx'
 
 export const IMPORT_REQUIRED_FIELDS = ['id', 'studentId', 'date', 'status'] as const
-export const IMPORT_ALLOWED_EXT = ['.xlsx', '.xls', '.csv'] as const
+export const IMPORT_ALLOWED_EXT = ['.xlsx', '.xls'] as const
 export const IMPORT_MAX_ROWS = 2000
 
 const HEADER_ALIASES: Record<string, string> = {
@@ -34,8 +34,8 @@ export function hasAllowedImportExt(filename: string) {
 }
 
 export async function validateImportFile(file: File): Promise<string | null> {
-  if (!hasAllowedImportExt(file.name)) {
-    return '上传格式不正确，仅支持 .xlsx、.xls、.csv 表格文件'
+  if (!hasAllowedImportExt(file.name) || /csv|text\/plain/i.test(file.type)) {
+    return '上传格式不正确，仅支持 .xlsx、.xls 表格文件'
   }
 
   if (file.size === 0) {

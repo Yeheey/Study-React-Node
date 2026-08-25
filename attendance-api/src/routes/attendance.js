@@ -67,7 +67,7 @@ router.post(
       return fail(res, '请上传表格文件')
     }
 
-    const parsed = parseImportWorkbook(req.file.buffer, req.file.originalname)
+    const parsed = parseImportWorkbook(req.file.buffer, req.file.originalname, req.file.mimetype)
     if (parsed.error) {
       return fail(res, parsed.error)
     }
