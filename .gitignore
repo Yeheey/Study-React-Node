@@ -1,0 +1,23 @@
+# dependencies
+**/node_modules/
+
+# build
+**/dist/
+**/dist-ssr/
+
+# env & logs
+**/.env
+**/.env.local
+**/*.log
+**/npm-debug.log*
+
+# editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
