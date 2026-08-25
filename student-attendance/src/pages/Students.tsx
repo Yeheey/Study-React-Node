@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Alert, Card, Flex, Input, Select, Table, Tag } from 'antd'
+import { SearchOutlined } from '@ant-design/icons'
 import { fetchMetaOptions, fetchStudents } from '../api'
+import PageShell from '../components/PageShell'
 import type { Student } from '../types'
-import './Students.css'
 
 export default function Students() {
   const [keyword, setKeyword] = useState('')
@@ -38,10 +40,9 @@ export default function Students() {
         const data = await fetchStudents({ keyword, grade })
         if (!cancelled) setList(data.list)
       } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : '加载失败')
-          setList([])
-        }
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : '加载失败')
+        setList([])
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -54,75 +55,54 @@ export default function Students() {
   }, [keyword, grade])
 
   return (
-    <div className="page">
-      <div className="page-head">
-        <div>
-          <h1>学生管理</h1>
-          <p className="page-desc">查看在册学生基本信息，支持按年级检索。</p>
-        </div>
-        <p className="count-chip">共 {list.length} 人</p>
-      </div>
+    <PageShell
+      title="学生管理"
+      description="查看在册学生基本信息，支持按年级检索。"
+      extra={<Tag color="green">共 {list.length} 人</Tag>}
+    >
+      <Card size="small">
+        <Flex wrap="wrap" gap={12} role="search">
+          <Input
+            allowClear
+            prefix={<SearchOutlined />}
+            placeholder="搜索姓名 / 学号 / 班级"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            style={{ width: 260 }}
+            aria-label="搜索学生"
+          />
+          <Select
+            allowClear
+            placeholder="全部年级"
+            value={grade || undefined}
+            onChange={(value) => setGrade(value ?? '')}
+            options={grades.map((item) => ({ value: item, label: item }))}
+            style={{ width: 180 }}
+            aria-label="筛选年级"
+          />
+        </Flex>
+      </Card>
 
-      <div className="filters" role="search">
-        <input
-          type="search"
-          placeholder="搜索姓名 / 学号 / 班级"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          aria-label="搜索学生"
-        />
-        <select value={grade} onChange={(e) => setGrade(e.target.value)} aria-label="筛选年级">
-          <option value="">全部年级</option>
-          {grades.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-      </div>
+      {error ? <Alert type="error" showIcon message="加载失败" description={error} /> : null}
 
-      {error ? <p className="page-state error">加载失败：{error}</p> : null}
-
-      <div className="panel table-panel">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>姓名</th>
-                <th>学号</th>
-                <th>年级</th>
-                <th>班级</th>
-                <th>联系电话</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="empty">
-                    加载中…
-                  </td>
-                </tr>
-              ) : list.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="empty">
-                    暂无匹配学生
-                  </td>
-                </tr>
-              ) : (
-                list.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.name}</td>
-                    <td>{s.studentNo}</td>
-                    <td>{s.grade}</td>
-                    <td>{s.className}</td>
-                    <td>{s.phone}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <Table
+        rowKey="id"
+        loading={loading}
+        dataSource={list}
+        scroll={{ x: 720 }}
+        locale={{ emptyText: '暂无匹配学生' }}
+        pagination={{
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 人`,
+        }}
+        columns={[
+          { title: '姓名', dataIndex: 'name' },
+          { title: '学号', dataIndex: 'studentNo' },
+          { title: '年级', dataIndex: 'grade' },
+          { title: '班级', dataIndex: 'className' },
+          { title: '联系电话', dataIndex: 'phone' },
+        ]}
+      />
+    </PageShell>
   )
 }

@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { Alert, Button, Card, Col, Flex, Progress, Row, Space, Spin, Statistic, Table } from 'antd'
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ExceptionOutlined,
+  TeamOutlined,
+  UserDeleteOutlined,
+} from '@ant-design/icons'
 import { fetchDashboardStats, fetchTodayAttendance } from '../api'
-import StatusBadge from '../components/StatusBadge'
+import StatusTag from '../components/StatusTag'
 import type { AttendanceRecord, DashboardStats } from '../types'
-import './Home.css'
 
 const emptyStats: DashboardStats = {
   totalStudents: 0,
@@ -15,6 +22,7 @@ const emptyStats: DashboardStats = {
 }
 
 export default function Home() {
+  const navigate = useNavigate()
   const [stats, setStats] = useState<DashboardStats>(emptyStats)
   const [recent, setRecent] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,102 +56,135 @@ export default function Home() {
     }
   }, [])
 
-  if (loading) {
-    return <p className="page-state">正在加载首页数据…</p>
-  }
-
   if (error) {
-    return <p className="page-state error">加载失败：{error}（请确认后端 attendance-api 已启动）</p>
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="加载失败"
+        description={`${error}（请确认后端 attendance-api 已启动）`}
+      />
+    )
   }
 
   return (
-    <div className="home">
-      <section className="hero-panel">
-        <div>
-          <p className="eyebrow">今日概览</p>
-          <h1>守课 · 打卡考勤</h1>
-          <p className="lead">掌握全校到勤情况，快速定位迟到、缺勤与请假学生。</p>
-          <div className="hero-actions">
-            <Link className="btn primary" to="/attendance">
-              查看今日打卡
-            </Link>
-            <Link className="btn ghost" to="/records">
-              历史记录
-            </Link>
-          </div>
-        </div>
-        <div className="rate-block" aria-label="今日出勤率">
-          <p className="rate-label">今日出勤率</p>
-          <p className="rate-value">{stats.attendanceRate}%</p>
-          <p className="rate-hint">已到 + 迟到 / 在册学生</p>
-        </div>
-      </section>
+    <Spin spinning={loading}>
+      <Flex vertical gap={16}>
+        <Card
+          variant="borderless"
+          styles={{ body: { padding: 28 } }}
+          style={{
+            background: 'linear-gradient(125deg, #1f6b4a 0%, #163528 100%)',
+            color: '#fff',
+          }}
+        >
+          <Row gutter={[24, 24]} align="middle">
+            <Col xs={24} md={16}>
+              <div style={{ color: 'rgba(255,255,255,0.72)', marginBottom: 8 }}>今日概览</div>
+              <h1 style={{ margin: 0, fontSize: 28, color: '#fff' }}>守课 · 打卡考勤</h1>
+              <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.82)', maxWidth: 480 }}>
+                掌握全校到勤情况，快速定位迟到、缺勤与请假学生。
+              </p>
+              <Space style={{ marginTop: 20 }} wrap>
+                <Button type="primary" onClick={() => navigate('/attendance')}>
+                  查看今日打卡
+                </Button>
+                <Button ghost onClick={() => navigate('/records')}>
+                  历史记录
+                </Button>
+              </Space>
+            </Col>
+            <Col xs={24} md={8}>
+              <Flex vertical align="center" gap={4}>
+                <Progress
+                  type="circle"
+                  percent={stats.attendanceRate}
+                  strokeColor="#7dcea0"
+                  trailColor="rgba(255,255,255,0.16)"
+                  format={(percent) => (
+                    <span style={{ color: '#fff' }}>{percent}%</span>
+                  )}
+                />
+                <span style={{ color: 'rgba(255,255,255,0.72)' }}>今日出勤率</span>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+                  已到 + 迟到 / 在册学生
+                </span>
+              </Flex>
+            </Col>
+          </Row>
+        </Card>
 
-      <section className="stats-row" aria-label="关键指标">
-        <article className="stat">
-          <p className="stat-label">在册学生</p>
-          <p className="stat-value">{stats.totalStudents}</p>
-        </article>
-        <article className="stat">
-          <p className="stat-label">已到</p>
-          <p className="stat-value present">{stats.presentToday}</p>
-        </article>
-        <article className="stat">
-          <p className="stat-label">迟到</p>
-          <p className="stat-value late">{stats.lateToday}</p>
-        </article>
-        <article className="stat">
-          <p className="stat-label">缺勤</p>
-          <p className="stat-value absent">{stats.absentToday}</p>
-        </article>
-        <article className="stat">
-          <p className="stat-label">请假</p>
-          <p className="stat-value leave">{stats.leaveToday}</p>
-        </article>
-      </section>
+        <Flex wrap="wrap" gap={16}>
+          <Card style={{ flex: '1 1 160px' }}>
+            <Statistic title="在册学生" value={stats.totalStudents} prefix={<TeamOutlined />} />
+          </Card>
+          <Card style={{ flex: '1 1 160px' }}>
+            <Statistic
+              title="已到"
+              value={stats.presentToday}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: '#1f6b4a' }}
+            />
+          </Card>
+          <Card style={{ flex: '1 1 160px' }}>
+            <Statistic
+              title="迟到"
+              value={stats.lateToday}
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: '#b86a1c' }}
+            />
+          </Card>
+          <Card style={{ flex: '1 1 160px' }}>
+            <Statistic
+              title="缺勤"
+              value={stats.absentToday}
+              prefix={<UserDeleteOutlined />}
+              valueStyle={{ color: '#b42318' }}
+            />
+          </Card>
+          <Card style={{ flex: '1 1 160px' }}>
+            <Statistic
+              title="请假"
+              value={stats.leaveToday}
+              prefix={<ExceptionOutlined />}
+              valueStyle={{ color: '#1677ff' }}
+            />
+          </Card>
+        </Flex>
 
-      <section className="panel">
-        <div className="panel-head">
-          <h2>今日最新打卡</h2>
-          <Link to="/attendance" className="text-link">
-            全部记录 →
-          </Link>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>姓名</th>
-                <th>学号</th>
-                <th>班级</th>
-                <th>打卡时间</th>
-                <th>状态</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="empty">
-                    暂无打卡数据
-                  </td>
-                </tr>
-              ) : (
-                recent.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.studentName}</td>
-                    <td>{row.studentNo}</td>
-                    <td>{row.className}</td>
-                    <td>{row.checkInTime ?? '—'}</td>
-                    <td>
-                      <StatusBadge status={row.status} />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+        <Card
+          title="今日最新打卡"
+          extra={
+            <Button type="link" onClick={() => navigate('/attendance')}>
+              全部记录
+            </Button>
+          }
+        >
+          <Table
+            rowKey="id"
+            size="middle"
+            pagination={false}
+            scroll={{ x: 640 }}
+            dataSource={recent}
+            locale={{ emptyText: '暂无打卡数据' }}
+            columns={[
+              { title: '姓名', dataIndex: 'studentName' },
+              { title: '学号', dataIndex: 'studentNo' },
+              { title: '班级', dataIndex: 'className' },
+              {
+                title: '打卡时间',
+                dataIndex: 'checkInTime',
+                render: (value: string | null) => value ?? '—',
+              },
+              {
+                title: '状态',
+                dataIndex: 'status',
+                render: (status: AttendanceRecord['status']) => <StatusTag status={status} />,
+              },
+            ]}
+          />
+        </Card>
+      </Flex>
+    </Spin>
   )
 }
