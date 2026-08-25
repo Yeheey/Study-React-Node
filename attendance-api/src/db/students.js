@@ -1,4 +1,11 @@
 import { getDb, isUniqueError } from './index.js'
+import {
+  createStudentLogin,
+  deleteStudentLogin,
+  findUserByUsername,
+  isReservedUsername,
+  syncStudentLogin,
+} from './users.js'
 
 function mapStudent(row) {
   if (!row) return null
@@ -66,30 +73,62 @@ export function listClasses() {
     .map((row) => row.class_name)
 }
 
+function toAccountError(err) {
+  const message = String(err?.message ?? '')
+  if (message.includes('users.username')) {
+    const error = new Error('该学号已被用作登录名')
+    error.status = 400
+    return error
+  }
+  if (isUniqueError(err)) {
+    const error = new Error('学号已存在')
+    error.status = 400
+    return error
+  }
+  return err
+}
+
+function assertStudentNoAvailable(studentNo, { ignoreUsername = '' } = {}) {
+  if (isReservedUsername(studentNo)) {
+    const error = new Error('该学号不可用作登录名')
+    error.status = 400
+    throw error
+  }
+
+  if (ignoreUsername && studentNo === ignoreUsername) return
+
+  const existing = findUserByUsername(studentNo)
+  if (!existing) return
+
+  const error = new Error('该学号已被用作登录名')
+  error.status = 400
+  throw error
+}
+
 export function createStudent({ name, studentNo, className, grade, phone = '' }) {
+  assertStudentNoAvailable(studentNo)
+
+  const db = getDb()
   const id = crypto.randomUUID()
+  const insert = db.transaction(() => {
+    db.prepare(
+      `INSERT INTO students (id, name, student_no, class_name, grade, phone)
+       VALUES (@id, @name, @studentNo, @className, @grade, @phone)`,
+    ).run({
+      id,
+      name,
+      studentNo,
+      className,
+      grade,
+      phone,
+    })
+    createStudentLogin({ username: studentNo, displayName: name })
+  })
 
   try {
-    getDb()
-      .prepare(
-        `INSERT INTO students (id, name, student_no, class_name, grade, phone)
-         VALUES (@id, @name, @studentNo, @className, @grade, @phone)`,
-      )
-      .run({
-        id,
-        name,
-        studentNo,
-        className,
-        grade,
-        phone,
-      })
+    insert()
   } catch (err) {
-    if (isUniqueError(err)) {
-      const error = new Error('学号已存在')
-      error.status = 400
-      throw error
-    }
-    throw err
+    throw toAccountError(err)
   }
 
   return getStudentById(id)
@@ -107,25 +146,30 @@ export function updateStudent(id, patch) {
     phone: patch.phone ?? current.phone,
   }
 
+  assertStudentNoAvailable(next.studentNo, { ignoreUsername: current.studentNo })
+
+  const db = getDb()
+  const update = db.transaction(() => {
+    db.prepare(
+      `UPDATE students
+       SET name = @name,
+           student_no = @studentNo,
+           class_name = @className,
+           grade = @grade,
+           phone = @phone
+       WHERE id = @id`,
+    ).run({ id, ...next })
+    syncStudentLogin({
+      oldUsername: current.studentNo,
+      username: next.studentNo,
+      displayName: next.name,
+    })
+  })
+
   try {
-    getDb()
-      .prepare(
-        `UPDATE students
-         SET name = @name,
-             student_no = @studentNo,
-             class_name = @className,
-             grade = @grade,
-             phone = @phone
-         WHERE id = @id`,
-      )
-      .run({ id, ...next })
+    update()
   } catch (err) {
-    if (isUniqueError(err)) {
-      const error = new Error('学号已存在')
-      error.status = 400
-      throw error
-    }
-    throw err
+    throw toAccountError(err)
   }
 
   return getStudentById(id)
@@ -135,6 +179,11 @@ export function deleteStudent(id) {
   const current = getStudentById(id)
   if (!current) return null
 
-  getDb().prepare('DELETE FROM students WHERE id = ?').run(id)
+  const db = getDb()
+  const remove = db.transaction(() => {
+    db.prepare('DELETE FROM students WHERE id = ?').run(id)
+    deleteStudentLogin(current.studentNo)
+  })
+  remove()
   return current
 }

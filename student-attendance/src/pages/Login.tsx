@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { App, Button, Card, Form, Input, Typography } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useAuth } from '../auth/AuthContext'
+import { homePath } from '../auth/paths'
 import './Login.css'
 
 interface LoginFormValues {
@@ -25,9 +26,18 @@ export default function Login() {
   async function onFinish(values: LoginFormValues) {
     setLoading(true)
     try {
-      await login(values.username.trim(), values.password)
+      const loggedIn = await login(values.username.trim(), values.password)
       message.success('登录成功')
-      navigate(from === '/login' ? '/' : from, { replace: true })
+      const fallback = homePath(loggedIn.role)
+      if (from === '/login' || from === '/') {
+        navigate(fallback, { replace: true })
+        return
+      }
+      if (loggedIn.role === 'student' && from !== '/leave') {
+        navigate('/leave', { replace: true })
+        return
+      }
+      navigate(from, { replace: true })
     } catch (err) {
       message.error(err instanceof Error ? err.message : '登录失败')
     } finally {

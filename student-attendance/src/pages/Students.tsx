@@ -84,7 +84,7 @@ export default function Students() {
         message.success('更新成功')
       } else {
         await createStudent(values)
-        message.success('新增成功')
+        message.success('新增成功，可用学号登录，默认密码 123456')
       }
       setEditorOpen(false)
       setReloadTick((tick) => tick + 1)
@@ -108,7 +108,7 @@ export default function Students() {
   return (
     <PageShell
       title="学生管理"
-      description="维护在册学生信息，数据保存在后端数据库中。"
+      description="维护在册学生信息。新增学生后可用学号登录，默认密码 123456。"
     >
       <Card size="small">
         <Flex wrap="wrap" gap={12} role="search" justify="space-between">

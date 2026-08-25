@@ -22,6 +22,9 @@ npm run dev
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/dashboard/stats` | 首页统计 |
 | GET | `/api/students?keyword=&grade=` | 学生列表（需管理员 token） |
+| POST | `/api/students` | 新增学生（需管理员 token；同时创建登录账号，用户名为学号，默认密码 123456） |
+| PATCH | `/api/students/:id` | 更新学生（需管理员 token） |
+| DELETE | `/api/students/:id` | 删除学生（需管理员 token） |
 | GET | `/api/attendance/today?keyword=&className=&status=` | 今日打卡 |
 | GET | `/api/attendance/records?date=&status=` | 历史考勤 |
 | GET | `/api/meta/options` | 班级/年级/日期选项 |
@@ -29,6 +32,10 @@ npm run dev
 | POST | `/api/attendance/records/import` | Excel 批量导入（.xlsx / .xls，需管理员 token，按 id 覆盖或新增） |
 | PATCH | `/api/attendance/:id` | 更新考勤记录（需管理员 token） |
 | DELETE | `/api/attendance/:id` | 删除考勤记录（需管理员 token） |
+| GET | `/api/leave-requests` | 当前学生的请假申请列表（需学生 token） |
+| POST | `/api/leave-requests` | 提交请假申请（需学生 token） |
+| GET | `/api/admin/leave-requests?keyword=&status=` | 全部请假申请（需管理员 token） |
+| PATCH | `/api/admin/leave-requests/:id` | 审批或修改请假状态，body 为 `{ status: 'approved' \| 'rejected', reviewRemark? }`（需管理员 token；已通过/已拒绝可互改，驳回须填写原因） |
 
 ## 联调说明
 

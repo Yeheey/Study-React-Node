@@ -3,6 +3,8 @@ import type {
   AuthSession,
   DashboardStats,
   ImportAttendanceResult,
+  LeaveRequest,
+  LeaveType,
   Student,
 } from '../types'
 import { getStoredAuth } from '../auth/session'
@@ -174,5 +176,41 @@ export function importAttendanceRecords(file: File) {
   return request<ImportAttendanceResult>('/api/attendance/records/import', {
     method: 'POST',
     body,
+  })
+}
+
+export function fetchLeaveRequests() {
+  return request<{ list: LeaveRequest[]; total: number }>('/api/leave-requests')
+}
+
+export function fetchAdminLeaveRequests(params: { keyword?: string; status?: string } = {}) {
+  const q = new URLSearchParams()
+  if (params.keyword) q.set('keyword', params.keyword)
+  if (params.status) q.set('status', params.status)
+  const qs = q.toString()
+  return request<{ list: LeaveRequest[]; total: number }>(
+    `/api/admin/leave-requests${qs ? `?${qs}` : ''}`,
+  )
+}
+
+export function reviewLeaveRequest(
+  id: string,
+  payload: { status: 'approved' | 'rejected'; reviewRemark?: string },
+) {
+  return request<LeaveRequest>(`/api/admin/leave-requests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function createLeaveRequest(payload: {
+  leaveType: LeaveType
+  startDate: string
+  endDate: string
+  reason: string
+}) {
+  return request<LeaveRequest>('/api/leave-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 }

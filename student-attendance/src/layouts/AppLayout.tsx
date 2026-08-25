@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Avatar, Dropdown, Flex, Layout, Menu, Typography } from 'antd'
 import {
+  AuditOutlined,
   CalendarOutlined,
   FileSearchOutlined,
+  FormOutlined,
   HomeOutlined,
   LogoutOutlined,
   TeamOutlined,
@@ -15,10 +17,12 @@ import './AppLayout.css'
 const { Header, Sider, Content } = Layout
 
 const allNavItems = [
-  { key: '/', icon: <HomeOutlined />, label: '首页总览' },
-  { key: '/attendance', icon: <CalendarOutlined />, label: '今日打卡' },
+  { key: '/', icon: <HomeOutlined />, label: '首页总览', staffOnly: true },
+  { key: '/attendance', icon: <CalendarOutlined />, label: '今日打卡', staffOnly: true },
   { key: '/students', icon: <TeamOutlined />, label: '学生管理', adminOnly: true },
-  { key: '/records', icon: <FileSearchOutlined />, label: '考勤记录' },
+  { key: '/leave-review', icon: <AuditOutlined />, label: '审批请假', adminOnly: true },
+  { key: '/records', icon: <FileSearchOutlined />, label: '考勤记录', staffOnly: true },
+  { key: '/leave', icon: <FormOutlined />, label: '申请请假', studentOnly: true },
 ]
 
 function formatToday() {
@@ -33,21 +37,27 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAdmin, logout } = useAuth()
+  const { user, isAdmin, isStudent, logout } = useAuth()
 
   const navItems = useMemo(
-    () => allNavItems.filter((item) => !item.adminOnly || isAdmin),
-    [isAdmin],
+    () =>
+      allNavItems.filter((item) => {
+        if (item.adminOnly) return isAdmin
+        if (item.studentOnly) return isStudent
+        if (item.staffOnly) return !isStudent
+        return true
+      }),
+    [isAdmin, isStudent],
   )
 
   const selectedKey = useMemo(() => {
     const match = navItems.find((item) =>
       item.key === '/' ? location.pathname === '/' : location.pathname.startsWith(item.key),
     )
-    return match?.key ?? '/'
+    return match?.key ?? navItems[0]?.key ?? '/'
   }, [location.pathname, navItems])
 
-  const roleLabel = isAdmin ? '管理员' : '普通用户'
+  const roleLabel = isAdmin ? '管理员' : isStudent ? '学生' : '普通用户'
 
   function handleLogout() {
     logout()

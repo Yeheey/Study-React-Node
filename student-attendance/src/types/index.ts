@@ -1,6 +1,10 @@
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'leave'
 
-export type UserRole = 'admin' | 'user'
+export type UserRole = 'admin' | 'user' | 'student'
+
+export type LeaveType = 'personal' | 'sick'
+
+export type LeaveStatus = 'pending' | 'approved' | 'rejected'
 
 export interface AuthUser {
   username: string
@@ -38,6 +42,24 @@ export interface ImportAttendanceResult {
   created: number
   updated: number
   failed: Array<{ row: number; id?: string; message: string }>
+}
+
+export interface LeaveRequest {
+  id: string
+  username: string
+  studentName?: string
+  studentNo?: string
+  className?: string
+  grade?: string
+  leaveType: LeaveType
+  startDate: string
+  endDate: string
+  reason: string
+  status: LeaveStatus
+  createdAt: string
+  reviewRemark?: string
+  reviewedAt?: string
+  reviewedBy?: string
 }
 
 export interface DashboardStats {

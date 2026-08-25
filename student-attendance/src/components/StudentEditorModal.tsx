@@ -58,8 +58,13 @@ export default function StudentEditorModal({
         <Form.Item name="name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
           <Input placeholder="请输入姓名" maxLength={20} />
         </Form.Item>
-        <Form.Item name="studentNo" label="学号" rules={[{ required: true, message: '请输入学号' }]}>
-          <Input placeholder="请输入学号" maxLength={32} />
+        <Form.Item
+          name="studentNo"
+          label="学号"
+          extra="学号将作为学生登录名，默认密码为 123456"
+          rules={[{ required: true, message: '请输入学号' }]}
+        >
+          <Input placeholder="请输入学号，将作为登录名" maxLength={32} />
         </Form.Item>
         <Form.Item name="grade" label="年级" rules={[{ required: true, message: '请输入年级' }]}>
           <Input placeholder="例如：高一" maxLength={20} />

@@ -1,12 +1,16 @@
 import cors from 'cors'
 import express from 'express'
 import { initDb } from './db/index.js'
-import { requireAdmin, requireAuth } from './middleware/auth.js'
+import { ensureStudentLogins } from './db/users.js'
+import { requireAdmin, requireAuth, requireStudent } from './middleware/auth.js'
 import attendanceRouter from './routes/attendance.js'
 import authRouter from './routes/auth.js'
+import leaveRouter from './routes/leave.js'
+import leaveAdminRouter from './routes/leaveAdmin.js'
 import studentsRouter from './routes/students.js'
 
 initDb()
+ensureStudentLogins()
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -27,6 +31,8 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRouter)
 app.use('/api/students', requireAuth, requireAdmin, studentsRouter)
+app.use('/api/leave-requests', requireAuth, requireStudent, leaveRouter)
+app.use('/api/admin/leave-requests', requireAuth, requireAdmin, leaveAdminRouter)
 app.use('/api', attendanceRouter)
 
 app.use((err, _req, res, _next) => {

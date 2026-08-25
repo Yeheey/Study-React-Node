@@ -6,7 +6,8 @@ import type { AuthUser } from '../types'
 interface AuthContextValue {
   user: AuthUser | null
   isAdmin: boolean
-  login: (username: string, password: string) => Promise<void>
+  isStudent: boolean
+  login: (username: string, password: string) => Promise<AuthUser>
   logout: () => void
 }
 
@@ -19,10 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isAdmin: user?.role === 'admin',
+      isStudent: user?.role === 'student',
       async login(username: string, password: string) {
         const session = await loginRequest({ username, password })
         setStoredAuth(session)
         setUser(session.user)
+        return session.user
       },
       logout() {
         clearStoredAuth()

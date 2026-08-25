@@ -23,3 +23,11 @@ export function requireAdmin(req, res, next) {
 
   return next()
 }
+
+export function requireStudent(req, res, next) {
+  if (req.user?.role !== 'student') {
+    return fail(res, '无权限执行该操作', 403, 403)
+  }
+
+  return next()
+}
