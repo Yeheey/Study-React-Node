@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Card, Flex, Input, Select, Table, Tag } from 'antd'
+import { Alert, Card, Flex, Input, Select, Table } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { fetchMetaOptions, fetchStudents } from '../api'
 import PageShell from '../components/PageShell'
@@ -58,7 +58,6 @@ export default function Students() {
     <PageShell
       title="学生管理"
       description="查看在册学生基本信息，支持按年级检索。"
-      extra={<Tag color="green">共 {list.length} 人</Tag>}
     >
       <Card size="small">
         <Flex wrap="wrap" gap={12} role="search">

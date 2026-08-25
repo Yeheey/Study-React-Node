@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Card, Flex, Input, Select, Table, Tag } from 'antd'
+import { Alert, Card, Flex, Input, Select, Table } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { fetchMetaOptions, fetchTodayAttendance } from '../api'
 import PageShell from '../components/PageShell'
@@ -65,7 +65,6 @@ export default function Attendance() {
     <PageShell
       title="今日打卡情况"
       description="按班级、状态筛选学生今日到勤明细。"
-      extra={<Tag color="green">共 {list.length} 条</Tag>}
     >
       <Card size="small">
         <Flex wrap="wrap" gap={12} role="search">

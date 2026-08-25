@@ -18,16 +18,20 @@ npm run dev
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| POST | `/api/auth/login` | 登录，返回 token 与用户角色 |
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/dashboard/stats` | 首页统计 |
-| GET | `/api/students?keyword=&grade=` | 学生列表 |
+| GET | `/api/students?keyword=&grade=` | 学生列表（需管理员 token） |
 | GET | `/api/attendance/today?keyword=&className=&status=` | 今日打卡 |
 | GET | `/api/attendance/records?date=&status=` | 历史考勤 |
 | GET | `/api/meta/options` | 班级/年级/日期选项 |
-| PATCH | `/api/attendance/:id` | 更新考勤状态 |
-| POST | `/api/attendance/check-in` | 学生打卡 |
+| POST | `/api/attendance/records` | 新增考勤记录（需管理员 token） |
+| POST | `/api/attendance/records/import` | 表格批量导入（需管理员 token，按 id 覆盖或新增） |
+| PATCH | `/api/attendance/:id` | 更新考勤记录（需管理员 token） |
+| DELETE | `/api/attendance/:id` | 删除考勤记录（需管理员 token） |
 
 ## 联调说明
 
 前端 Vite 已代理 `/api` → `http://localhost:3001`。  
-先启动本服务，再启动 React：`npm run dev`。
+先启动本服务，再启动 React：`npm run dev`。  
+演示账号见 `student-attendance/README.md`。

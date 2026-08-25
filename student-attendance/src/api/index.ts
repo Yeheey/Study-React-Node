@@ -1,4 +1,11 @@
-import type { AttendanceRecord, DashboardStats, Student } from '../types'
+import type {
+  AttendanceRecord,
+  AuthSession,
+  DashboardStats,
+  ImportAttendanceResult,
+  Student,
+} from '../types'
+import { getStoredAuth } from '../auth/session'
 
 export interface ApiResponse<T> {
   code: number
@@ -7,24 +14,36 @@ export interface ApiResponse<T> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  })
-
-  if (!res.ok) {
-    throw new Error(`请求失败: ${res.status}`)
+  const token = getStoredAuth()?.token
+  const headers = new Headers(init?.headers)
+  if (!(init?.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json')
+  }
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
-  const body = (await res.json()) as ApiResponse<T>
-  if (body.code !== 0) {
-    throw new Error(body.message || '接口返回异常')
+  const res = await fetch(path, { ...init, headers })
+
+  let body: ApiResponse<T> | null = null
+  try {
+    body = (await res.json()) as ApiResponse<T>
+  } catch {
+    body = null
+  }
+
+  if (!res.ok || !body || body.code !== 0) {
+    throw new Error(body?.message || `请求失败: ${res.status}`)
   }
 
   return body.data
+}
+
+export function login(payload: { username: string; password: string }) {
+  return request<AuthSession>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function fetchDashboardStats() {
@@ -78,4 +97,47 @@ export function fetchMetaOptions() {
     dates: string[]
     today: string
   }>('/api/meta/options')
+}
+
+export function createAttendanceRecord(payload: {
+  studentId: string
+  date: string
+  status: string
+  checkInTime?: string | null
+  remark?: string
+}) {
+  return request<AttendanceRecord>('/api/attendance/records', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateAttendanceRecord(
+  id: string,
+  payload: {
+    date?: string
+    status?: string
+    checkInTime?: string | null
+    remark?: string
+  },
+) {
+  return request<AttendanceRecord>(`/api/attendance/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function deleteAttendanceRecord(id: string) {
+  return request<AttendanceRecord>(`/api/attendance/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export function importAttendanceRecords(file: File) {
+  const body = new FormData()
+  body.append('file', file)
+  return request<ImportAttendanceResult>('/api/attendance/records/import', {
+    method: 'POST',
+    body,
+  })
 }

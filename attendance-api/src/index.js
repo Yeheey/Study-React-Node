@@ -1,6 +1,8 @@
 import cors from 'cors'
 import express from 'express'
+import { requireAdmin, requireAuth } from './middleware/auth.js'
 import attendanceRouter from './routes/attendance.js'
+import authRouter from './routes/auth.js'
 import studentsRouter from './routes/students.js'
 
 const app = express()
@@ -20,10 +22,16 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
-app.use('/api/students', studentsRouter)
+app.use('/api/auth', authRouter)
+app.use('/api/students', requireAuth, requireAdmin, studentsRouter)
 app.use('/api', attendanceRouter)
 
 app.use((err, _req, res, _next) => {
+  if (err?.name === 'MulterError') {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? '文件过大，最大 2MB' : '文件上传失败'
+    return res.status(400).json({ code: 1, message, data: null })
+  }
+
   console.error(err)
   res.status(500).json({ code: 500, message: err.message || '服务器错误', data: null })
 })

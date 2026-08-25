@@ -1,0 +1,31 @@
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, #c5e0d0 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, #d4e8dc 0%, transparent 50%),
+    #e8efe9;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 12px 40px rgba(21, 36, 28, 0.08);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.login-mark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}

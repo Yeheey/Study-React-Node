@@ -8,6 +8,22 @@ export function fail(res, message = 'error', code = 1, status = 400) {
   return res.status(status).json({ code, message, data: null })
 }
 
+export const VALID_STATUS = new Set(['present', 'late', 'absent', 'leave'])
+
+export function isValidDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value ?? ''))
+}
+
+export function isValidTime(value) {
+  return /^\d{2}:\d{2}$/.test(String(value ?? ''))
+}
+
+export function findDuplicateRecord(studentId, date, excludeId = '') {
+  return attendanceRecords.find(
+    (row) => row.studentId === studentId && row.date === date && row.id !== excludeId,
+  )
+}
+
 export function getTodayRecords() {
   return attendanceRecords.filter((r) => r.date === TODAY)
 }

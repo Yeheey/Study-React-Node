@@ -1,5 +1,18 @@
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'leave'
 
+export type UserRole = 'admin' | 'user'
+
+export interface AuthUser {
+  username: string
+  role: UserRole
+  displayName: string
+}
+
+export interface AuthSession {
+  token: string
+  user: AuthUser
+}
+
 export interface Student {
   id: string
   name: string
@@ -19,6 +32,12 @@ export interface AttendanceRecord {
   checkInTime: string | null
   status: AttendanceStatus
   remark?: string
+}
+
+export interface ImportAttendanceResult {
+  created: number
+  updated: number
+  failed: Array<{ row: number; id?: string; message: string }>
 }
 
 export interface DashboardStats {
