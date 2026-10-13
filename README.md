@@ -1,6 +1,6 @@
-# OldPang · 学生打卡考勤系统
+# Study-React-Node· 学生打卡考勤系统
 
-前后端联调工程，对应仓库：[Yeheey/OldPang](https://github.com/Yeheey/OldPang)
+前后端联调工程，对应仓库：[Yeheey/Study-React-Node](https://github.com/Yeheey/Study-React-Node)
 
 ## 目录
 
